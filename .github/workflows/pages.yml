@@ -1,0 +1,35 @@
+on:
+  push:
+    branches:
+      - master
+name: Publish 
+jobs:
+  build:
+    name: "Build on Racket '${{ matrix.racket-version }}' (${{ matrix.racket-variant }})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        racket-version: ["stable"]
+        racket-variant: ["CS"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: runlang/setup-racket@41d6c53b8bac529c4e90e314a820c0a6af654b55
+        with:
+          architecture: x64
+          distribution: full
+          variant: ${{ matrix.racket-variant }}
+          version: ${{ matrix.racket-version }}
+      - name: Installing runlang and its dependencies
+        run: raco pkg install --no-docs --auto --name runlang
+      - name: Compiling runlang and building its docs
+        run: raco setup --check-pkg-deps --unused-pkg-deps runlang
+      - name: Build specification
+        run: |
+          scribble --dest doc --html scribblings/runlang.scrbl
+          scribble --dest doc --htmls scribblings/runlang.scrbl
+          cp doc/runlang.html doc/index.html
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@4.1.4
+        with:
+          branch: gh-pages
+          folder: doc

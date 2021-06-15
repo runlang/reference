@@ -1,0 +1,24 @@
+on: [push, pull_request]
+name: CI
+jobs:
+  build:
+    name: "Build on Racket '${{ matrix.racket-version }}' (${{ matrix.racket-variant }})"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        racket-version: ["stable"]
+        racket-variant: ["CS"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: runlang/setup-racket@41d6c53b8bac529c4e90e314a820c0a6af654b55
+        with:
+          architecture: x64
+          distribution: full
+          variant: ${{ matrix.racket-variant }}
+          version: ${{ matrix.racket-version }}
+      - name: Installing runlang and its dependencies
+        run: raco pkg install --no-docs --auto --name runlang
+      - name: Compiling runlang and building its docs
+        run: raco setup --check-pkg-deps --unused-pkg-deps runlang
+      - name: Testing runlang
+        run: raco test -x -p runlang
